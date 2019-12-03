@@ -4,7 +4,7 @@ import json
 
 
 class House:
-    def __init__(self, address, sqft, value, year_built, porch, patio, deck, garage, purchase_date, buyer):
+    def __init__(self, address, sqft, value, year_built, porch, patio, deck, garage, purchase_date, buyer, bedrooms, baths, fireplace):
         self.address = address
         self.sqft = sqft
         self.value = value
@@ -15,6 +15,9 @@ class House:
         self.garage = garage
         self.purchase_date = purchase_date
         self.buyer = buyer
+        self.bedrooms = bedrooms
+        self.baths = baths
+        self.fireplace = fireplace
 
 
 def get_property_id(address):
@@ -92,6 +95,10 @@ def get_data(id_one, id_two):
         for cell in cells[2:4]:
             subelements.append(cell.text)
 
+    bedrooms = subelements[1]
+    baths = float(str(subelements[3])[:3])
+    fireplace = subelements[7]
+
     sales_data_headers = ['Deed Date', 'Seller', 'Buyer', 'Instrument']
     sales_table_raw = soup.find(class_='sectionHeader', string='SALES HISTORY').parent.parent
     sales_table = sales_table_raw.find('table')
@@ -101,12 +108,12 @@ def get_data(id_one, id_two):
     sales_data = list(zip(sales_data_headers, sales_data_values))
 
     try:
-        purchase_date = sales_data[1]
+        purchase_date = sales_data[0][1]
     except:
         purchase_date = "Not Found"
 
     try:
-        buyer = sales_data[5]
+        buyer = sales_data[2][1]
     except:
         buyer = "Not Found"
 
@@ -119,7 +126,10 @@ def get_data(id_one, id_two):
                     deck=deck,
                     garage=garage,
                     purchase_date=purchase_date,
-                    buyer=buyer)
+                    buyer=buyer,
+                    bedrooms=bedrooms,
+                    baths=baths,
+                    fireplace=fireplace)
     return results
 
 
@@ -140,5 +150,8 @@ if __name__ == '__main__':
         print(house.garage)
         print(house.purchase_date)
         print(house.buyer)
+        print(house.bedrooms)
+        print(house.baths)
+        print(house.fireplace)
     else:
         print("Property Not Found")
