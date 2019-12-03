@@ -4,6 +4,7 @@ import requests
 import json
 
 
+# Creating a House object to organize the results for easier access
 class House:
     def __init__(self, address, sqft, value, year_built, porch, patio, deck, garage, purchase_date, buyer, bedrooms,
                  baths, fireplace, elements):
@@ -24,54 +25,107 @@ class House:
 
 
 def get_property_id(address):
+    """
+    This function queries the FBCAD website for the unique Property ID
+    and Quick Reference ID assigned by FBCAD.
+
+    If the property is not found this function returns None.
+
+    :param address: User provided address to search on FBCAD website
+    :return: FBCAD Property ID and Quick Reference ID or None
+    """
+
+    # Creating a new request session
     r = requests.Session()
+
+    # Setting User agent to mimic browser
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0'}
 
+    # These are the params for the GET call to FBCAD url
     parameters = {'ty': 2019, 'f': address}
 
+    # The FBCAD URL for the initial query
     url = 'https://fbcad.org/ProxyT/Search/Properties/quick'
 
     s = r.get(url, headers=headers, params=parameters)
+
+    # Check for errors
     s.raise_for_status()
 
+    # The returned data is in JSON format so parsing JSON
     json_data = json.loads(s.text)
 
+    # In the JSON results, Record Count shows 0 if property not found
     if json_data['RecordCount'] != 0:
+        # If property is found, retrieve the property IDs
+        # and call get_data()
         id_one = json_data['ResultList'][0]['PropertyQuickRefID']
         id_two = json_data['ResultList'][0]['PartyQuickRefID']
         return get_data(id_one, id_two)
     else:
-        return "Property Not Found"
+        return None
 
 
 def get_data(id_one, id_two):
+    """
+    Gets all the data from the FBCAD website for the particular property.
+
+    :param id_one: FBCAD Property ID
+    :param id_two: FBCAD Quick Reference ID
+    :return: An instance of the House object containing the results
+    """
+
+    # Creating a new request session
     r = requests.Session()
+
+    # Setting User agent to mimic browser
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0'}
 
+    # These are the params for the specific property
     parameters = {'PropertyQuickRefID': id_one, 'PartyQuickRefID': id_two}
     url = 'https://fbcad.org/Property-Detail'
 
     s = r.get(url, headers=headers, params=parameters)
+
+    # Parsing results from above url through BeautifulSoup
     soup = BeautifulSoup(s.text, 'lxml')
 
-    header_data = soup.find_all("td", class_="propertyData")
+    # The property page on FBCAD is made up for tables
+    # Getting the first set of data we need which is in a <td>
+    header_data = soup.find_all('td', class_='propertyData')
+
+    # The complete address for the house
     formatted_address = header_data[2].text
+
+    # The appraised value for the house
     appraised_value = header_data[3].text
+
+    # The square footage for the house
     square_foot = soup.find_all(class_='improvementsFieldData')[3].text
 
-    # Element names: Main Area, Attached Garage, Open Porch etc
+    # Element labels: Main Area, Attached Garage, Open Porch etc
     house_elements_labels = soup.find_all(class_='segmentTableColumn2')
-    element_names = [item.text for item in house_elements_labels[1:]]
 
-    # Element Values
+    # Skipping the first cell of labels as it is the table header
+    element_labels = [item.text for item in house_elements_labels[1:]]
+
+    # Element values for each of the labels above
     house_elements_values = soup.find_all(class_='segmentTableColumn4')
-    element_value = [int(item.text.replace(',', '')) for item in house_elements_values[1:]]
 
-    elements = tuple(zip(element_names, element_value))
+    # Skipping the first cell of values as it is the table header
+    # Also removing the ',' from the values to allow conversion to int
+    element_values = [int(item.text.replace(',', '')) for item in house_elements_values[1:]]
 
+    # Creating a tuple from the element labels and element values
+    elements = tuple(zip(element_labels, element_values))
+
+    # Setting the default value for these variables to 0
     porch, patio, deck, garage = [0] * 4
 
+    # Iterating over the tuple called elements of key/value pairs to extract data
     for k, v in elements:
+        # If the word Porch appears in the element label above (k)
+        # then add its value (v) to the variable porch
         if 'Porch' in k:
             porch += v
         if 'Patio' in k:
@@ -81,43 +135,64 @@ def get_data(id_one, id_two):
         if 'Garage' in k:
             garage += v
 
+    # Get the year built
     try:
         year_built = soup.find_all(class_='segmentTableColumn3')[1].text
     except AttributeError:
         year_built = "Not Found"
 
     # Sub-elements: Bedrooms, Baths, Heat and AC etc
-    subelements = []
-    subelements_table = soup.find('table', class_="segmentDetailsTable")
-    subelements_table_rows = subelements_table.find_all('tr')
+    # Creating empty list to hold the sub_elements
+    sub_elements = []
 
-    for row in subelements_table_rows:
+    # Selecting the table that has the sub_elements
+    sub_elements_table = soup.find('table', class_='segmentDetailsTable')
+
+    # Getting all the rows inside the sub_elements table
+    sub_elements_table_rows = sub_elements_table.find_all('tr')
+
+    # Iterating over each row
+    for row in sub_elements_table_rows:
+        # Getting all cells in each row
         cells = row.find_all('td')
+        # The sub_elements section has six columns of data
+        # We only need the middle two columns
         for cell in cells[2:4]:
-            subelements.append(cell.text)
+            # Adding the sub_elements labels and values to the sub_elements list
+            sub_elements.append(cell.text)
 
-    bedrooms = subelements[1]
-    baths = float(str(subelements[3])[:3])
-    fireplace = subelements[7]
+    # Getting the number of bedrooms, bathrooms, and fireplace
+    bedrooms = sub_elements[1]
+    baths = float(str(sub_elements[3])[:3])
+    fireplace = sub_elements[7]
 
-    sales_data_headers = ['Deed Date', 'Seller', 'Buyer', 'Instrument']
+    # Selecting the Sales History table to get last sale information
+    # Finding the element that has SALES HISTORY text and then selecting
+    # it's parent and then it's parent
     sales_table_raw = soup.find(class_='sectionHeader', string='SALES HISTORY').parent.parent
+
+    # Selecting the first table inside the selection above
     sales_table = sales_table_raw.find('table')
+
+    # Getting all the rows <tr>
     sales_table_rows = sales_table.find_all('tr')
-    sales_data_values = sales_table_rows[1].text.strip().split('\n')
 
-    sales_data = list(zip(sales_data_headers, sales_data_values))
+    # Getting the first row of data which includes deed date, seller, buyer etc
+    sales_data = sales_table_rows[1].text.strip().split('\n')
 
+    # Extracting the Purchase Date
     try:
-        purchase_date = sales_data[0][1]
+        purchase_date = sales_data[0]
     except:
         purchase_date = "Not Found"
 
+    # Extracting the name of the buyer
     try:
-        buyer = sales_data[2][1]
+        buyer = sales_data[2]
     except:
         buyer = "Not Found"
 
+    # Creating a House instance with the above scraped data
     results = House(address=formatted_address,
                     sqft=square_foot,
                     value=appraised_value,
@@ -132,10 +207,19 @@ def get_data(id_one, id_two):
                     baths=baths,
                     fireplace=fireplace,
                     elements=elements)
+
+    # Return the House object
     return results
 
 
 def format_result(house):
+    """
+    Formats the result from the house object into the template
+
+    :param house: An instance of the House object
+    :return: A string containing the formatted template with data
+    """
+
     template = f"""
 {house.address}
 
@@ -160,10 +244,15 @@ FLOOD QUOTE:
     return template
 
 
+# Ask the user for the address to search
 query = input("Enter Property Address > ")
+
+# Running a search on the address
 result = get_property_id(query.strip())
 
-if isinstance(result, str):
-    pyperclip.copy("Property Not Found")
-else:
+# Checking if the property was found
+if result:
     pyperclip.copy(format_result(result))
+else:
+    print("Property Not Found")
+    pyperclip.copy("Property Not Found")
