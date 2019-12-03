@@ -135,9 +135,7 @@ def get_data(id_one, id_two):
     return results
 
 
-if __name__ == '__main__':
-    house = get_property_id('802 LONGVALE GLEN')
-
+def format_result(house):
     template = f"""
 {house.address}
 
@@ -159,4 +157,13 @@ FLOOD QUOTE:
 
 {vars(house)}
 """
-    pyperclip.copy(template)
+    return template
+
+
+query = input("Enter Property Address > ")
+result = get_property_id(query.strip())
+
+if isinstance(result, str):
+    pyperclip.copy("Property Not Found")
+else:
+    pyperclip.copy(format_result(result))
