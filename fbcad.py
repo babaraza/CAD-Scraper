@@ -1,10 +1,12 @@
 from bs4 import BeautifulSoup
+import pyperclip
 import requests
 import json
 
 
 class House:
-    def __init__(self, address, sqft, value, year_built, porch, patio, deck, garage, purchase_date, buyer, bedrooms, baths, fireplace):
+    def __init__(self, address, sqft, value, year_built, porch, patio, deck, garage, purchase_date, buyer, bedrooms,
+                 baths, fireplace, elements):
         self.address = address
         self.sqft = sqft
         self.value = value
@@ -18,6 +20,7 @@ class House:
         self.bedrooms = bedrooms
         self.baths = baths
         self.fireplace = fireplace
+        self.elements = elements
 
 
 def get_property_id(address):
@@ -27,7 +30,6 @@ def get_property_id(address):
     parameters = {'ty': 2019, 'f': address}
 
     url = 'https://fbcad.org/ProxyT/Search/Properties/quick'
-    # alternative url https://fbcad.org/Property-Search-Results/searchtext/802 longvale
 
     s = r.get(url, headers=headers, params=parameters)
     s.raise_for_status()
@@ -37,9 +39,9 @@ def get_property_id(address):
     if json_data['RecordCount'] != 0:
         id_one = json_data['ResultList'][0]['PropertyQuickRefID']
         id_two = json_data['ResultList'][0]['PartyQuickRefID']
-        return id_one, id_two
+        return get_data(id_one, id_two)
     else:
-        return None
+        return "Property Not Found"
 
 
 def get_data(id_one, id_two):
@@ -84,7 +86,6 @@ def get_data(id_one, id_two):
     except AttributeError:
         year_built = "Not Found"
 
-    # TODO: Extract subelements
     # Sub-elements: Bedrooms, Baths, Heat and AC etc
     subelements = []
     subelements_table = soup.find('table', class_="segmentDetailsTable")
@@ -129,29 +130,33 @@ def get_data(id_one, id_two):
                     buyer=buyer,
                     bedrooms=bedrooms,
                     baths=baths,
-                    fireplace=fireplace)
+                    fireplace=fireplace,
+                    elements=elements)
     return results
 
 
 if __name__ == '__main__':
-    input_address = '11014 OVERLAND TRAIL'
+    house = get_property_id('802 LONGVALE GLEN')
 
-    ids = get_property_id(input_address)
+    template = f"""
+{house.address}
 
-    if ids:
-        house = get_data(*ids)
-        print(house.address)
-        print(house.sqft)
-        print(house.value)
-        print(house.year_built)
-        print(house.porch)
-        print(house.patio)
-        print(house.deck)
-        print(house.garage)
-        print(house.purchase_date)
-        print(house.buyer)
-        print(house.bedrooms)
-        print(house.baths)
-        print(house.fireplace)
-    else:
-        print("Property Not Found")
+STORY      : 
+YEAR BUILT : {house.year_built}
+ROOF REPL  : 
+SQ FOOT    : {house.sqft}
+BATHROOMS  : {house.baths}
+GARAGE     : {house.garage}
+FIREPLACE  : {house.fireplace}
+OPEN PORCH : {house.porch}
+PATIO      : {house.patio}
+DOGS       : 
+PAY        : 
+EXTERIOR   : 
+BOUGHT     : {house.purchase_date}
+MARKET VAL : {house.value}
+FLOOD QUOTE: 
+
+{vars(house)}
+"""
+    pyperclip.copy(template)
