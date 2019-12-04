@@ -7,7 +7,7 @@ import json
 # Creating a House object to organize the results for easier access
 class House:
     def __init__(self, address, sqft, value, year_built, porch, patio, deck, garage, purchase_date, buyer, bedrooms,
-                 baths, fireplace, elements):
+                 baths, fireplace, stories, elements):
         self.address = address
         self.sqft = sqft
         self.value = value
@@ -21,6 +21,7 @@ class House:
         self.bedrooms = bedrooms
         self.baths = baths
         self.fireplace = fireplace
+        self.stories = stories
         self.elements = elements
 
 
@@ -114,26 +115,29 @@ def get_data(id_one, id_two):
 
     # Skipping the first cell of values as it is the table header
     # Also removing the ',' from the values to allow conversion to int
-    element_values = [int(item.text.replace(',', '')) for item in house_elements_values[1:]]
+    element_values = [item.text.replace(',', '').replace('-', '0') for item in house_elements_values[1:]]
 
     # Creating a tuple from the element labels and element values
     elements = tuple(zip(element_labels, element_values))
 
     # Setting the default value for these variables to 0
     porch, patio, deck, garage = [0] * 4
+    stories = 1
 
     # Iterating over the tuple called elements of key/value pairs to extract data
     for k, v in elements:
         # If the word Porch appears in the element label above (k)
         # then add its value (v) to the variable porch
         if 'Porch' in k:
-            porch += v
+            porch += int(v)
         if 'Patio' in k:
-            patio += v
+            patio += int(v)
         if 'Deck' in k:
-            deck += v
+            deck += int(v)
         if 'Garage' in k:
-            garage += v
+            garage += int(v)
+        if 'Story' in k:
+            stories = 2
 
     # Get the year built
     try:
@@ -206,6 +210,7 @@ def get_data(id_one, id_two):
                     bedrooms=bedrooms,
                     baths=baths,
                     fireplace=fireplace,
+                    stories=stories,
                     elements=elements)
 
     # Return the House object
@@ -229,7 +234,7 @@ def format_result(house):
     template = f"""
 {house.address}
 
-STORY      : 
+STORY      : {house.stories}
 YEAR BUILT : {house.year_built}
 ROOF REPL  : 
 SQ FOOT    : {house.sqft}
