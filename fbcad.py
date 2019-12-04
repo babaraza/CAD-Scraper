@@ -220,6 +220,12 @@ def format_result(house):
     :return: A string containing the formatted template with data
     """
 
+    # Getting the raw data i.e. elements retrieved from the CAD website
+    # this is to double check the decks, porch, patio etc
+    raw_data = ""
+    for k, v in house.elements:
+        raw_data += f'{k}: {v}\n'
+
     template = f"""
 {house.address}
 
@@ -239,7 +245,8 @@ BOUGHT     : {house.purchase_date}
 MARKET VAL : {house.value}
 FLOOD QUOTE: 
 
-{vars(house)}
+Raw Data:
+{raw_data}
 """
     return template
 
