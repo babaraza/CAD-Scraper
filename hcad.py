@@ -1,3 +1,4 @@
+from utilities import House, format_result
 from bs4 import BeautifulSoup
 import pyperclip
 import requests
@@ -100,5 +101,35 @@ def get_data(stnum, stname):
 
     # Ownership History
 
+    # Creating a House instance with the above scraped data
+    results = House(address=formatted_address,
+                    sqft=sqft,
+                    value=value,
+                    year_built=year_built,
+                    porch=porch,
+                    patio=patio,
+                    deck=deck,
+                    garage=garage,
+                    purchase_date=purchase_date,
+                    buyer='',
+                    bedrooms='',
+                    baths=baths,
+                    fireplace=fireplace,
+                    stories='',
+                    elements=elements)
 
-get_data(stnum='', stname='')
+    return results
+
+
+# Ask the user for the address to search
+query = input("Enter Property Address > ")
+
+# Running a search on the address
+result = get_data(stnum='', stname='')
+
+# Checking if the property was found
+if result:
+    pyperclip.copy(format_result(result))
+else:
+    print("Property Not Found")
+    pyperclip.copy("Property Not Found")
