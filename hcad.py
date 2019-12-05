@@ -37,15 +37,12 @@ def get_data(stnum, stname):
     value_rows = value_table.find_all('tr')[-2]
     value_cells = value_rows.find_all('td')
     value = value_cells[-1].text.strip()
-    print(value)
 
     year_table = soup.find('th', string="Year Built").parent.parent
     year_rows = year_table.find_all('tr')[-2]
     year_cells = year_rows.find_all('td')
     year_built = year_cells[1].text.strip()
     sqft = year_cells[-2].text.strip()
-    print(year_built)
-    print(sqft)
 
     building_data_table = soup.find('th', string='Building Data').parent.parent
 
@@ -72,9 +69,6 @@ def get_data(stnum, stname):
     except AttributeError:
         fireplace = 0
 
-    print(baths)
-    print(fireplace)
-
     # Building Areas all items 8
     building_area_table = soup.find('th', string=re.compile('(Building Areas)')).parent.parent
     building_area_data = building_area_table.find_all('td')
@@ -94,15 +88,30 @@ def get_data(stnum, stname):
         if 'garage' in k.lower():
             garage += int(v)
 
-    print(porch, patio, deck, garage)
+    address_row = soup.find('td', string="Property Address:").parent
+    address_raw = address_row.find('th').contents
+    address = f'{address_raw[0]}, {address_raw[2]}'.strip()
+
+    # Alternative method to get Address
+    # address_raw = str(address_row.find('th')).replace('<br/>', ', ').replace('</th>', '')
+    # address = re.sub(r"<([^>]+)>", "", address_raw).strip()
+
+    # Purchase date
+    ownership_url = "https://public.hcad.org/" + soup.find('a', string="Ownership History")['href']
+
+    s2 = r.post(ownership_url, headers=headers)
+    s2.raise_for_status()
+
+    soup2 = BeautifulSoup(s2.text, 'lxml')
+
+    owner_table = soup2.find_all('table')[1]
+    purchase_date = owner_table.find('td', text="Effective Date").find_next('td').find_next('td').text
 
     # Extra Features
     # Description: Frame Detached Garage Units: 484
 
-    # Ownership History
-
     # Creating a House instance with the above scraped data
-    results = House(address=formatted_address,
+    results = House(address=address,
                     sqft=sqft,
                     value=value,
                     year_built=year_built,
@@ -116,7 +125,7 @@ def get_data(stnum, stname):
                     baths=baths,
                     fireplace=fireplace,
                     stories='',
-                    elements=elements)
+                    elements=building_area)
 
     return results
 
