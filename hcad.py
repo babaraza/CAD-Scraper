@@ -5,15 +5,21 @@ import requests
 import re
 
 
-# Got help from https://stackoverflow.com/questions/45654298/cant-parse-name-from-a-webpage-using-post-request
-# for using referer in the post call
-
-
 def get_data(stnum, stname):
+    """
+    Goes to the HCAD website and searches the inputted address
+    If found, scrapes all the data and returns an House object
+
+    :param stnum: User inputted street number
+    :param stname: User inputted street name
+    :return: An instance of the House object containing all scraped data
+    """
+
     # Creating a new request session
     r = requests.Session()
 
     # Setting User agent to mimic browser
+    # Adding the referrer/content-type in the headers was the key to get this working
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0',
                'Content-type': 'application/x-www-form-urlencoded',
                'Referer': 'https://public.hcad.org/records/quicksearch.asp'}
@@ -23,59 +29,80 @@ def get_data(stnum, stname):
 
     # These are the params for the POST call to HCAD url
     payload = {'TaxYear': '2019',
-               'stnum': stnum,
-               'stname': stname}
+               'stnum': stnum,      # This is the street number
+               'stname': stname}    # This is the street name
 
     s = r.post(url, headers=headers, data=payload)
 
     # Check for errors
     s.raise_for_status()
 
+    # Parsing the date into BeautifulSoup
     soup = BeautifulSoup(s.text, 'lxml')
 
+    # Getting the latest appraised value
+    # Since the table containing the value doesnt have an ID etc
+    # I am selecting the cell with the text "Value as of..." then finding its parent table
     value_table = soup.find('td', string=re.compile("^Value as of")).parent.parent
+    # Getting the second last row in the above table
     value_rows = value_table.find_all('tr')[-2]
+    # Getting all the cells in the above table
     value_cells = value_rows.find_all('td')
+    # Extracting the appraised value
     value = value_cells[-1].text.strip()
 
+    # Getting the year built and sqft by finding the parent table
     year_table = soup.find('th', string="Year Built").parent.parent
+    # Getting the second last row
     year_rows = year_table.find_all('tr')[-2]
+    # Finding all the cells in the above table
     year_cells = year_rows.find_all('td')
+    # Extracting the year built
     year_built = year_cells[1].text.strip()
+    # Since the square foot is in the same table, getting sqft from same place
     sqft = year_cells[-2].text.strip()
 
+    # Selecting the table on the bottom left of the HCAD page which has baths, fireplace etc
     building_data_table = soup.find('th', string='Building Data').parent.parent
 
-    # Room: Half Bath 1
+    # Getting the half-baths
     try:
-        baths_half_row = building_data_table.find('td', string=re.compile('(Half)')).parent
-        baths_half = baths_half_row.find_all('td')[-1].text
+        # Selecting the cell, using regex, that has the words Half
+        baths_half_cell = building_data_table.find('td', string=re.compile('(Half)')).parent
+        baths_half = baths_half_cell.find_all('td')[-1].text
     except AttributeError:
         baths_half = 0
 
-    # Room: Full Bath 2
+    # Getting the full-baths
     try:
-        baths_full_row = building_data_table.find('td', string=re.compile('(Full)')).parent
-        baths_full = baths_full_row.find_all('td')[-1].text
+        # Selecting the cell, using regex, that has the words Full
+        baths_full_cell = building_data_table.find('td', string=re.compile('(Full)')).parent
+        baths_full = baths_full_cell.find_all('td')[-1].text
     except AttributeError:
         baths_full = 0
 
+    # Compiling the full and half baths so two and a half baths would be 2.5
     baths = int(baths_full) + int(baths_half) / 2
 
-    # Fireplace: Masonry Firebrick 1
+    # Getting the Fireplace
     try:
-        fireplace_row = building_data_table.find('td', string=re.compile('(Fireplace)')).parent
-        fireplace = fireplace_row.find_all('td')[-1].text
+        # Selecting the cell, using regex, that has the words Fireplace
+        fireplace_cell = building_data_table.find('td', string=re.compile('(Fireplace)')).parent
+        fireplace = fireplace_cell.find_all('td')[-1].text
     except AttributeError:
         fireplace = 0
 
-    # Building Areas all items 8
+    # Selecting the table on the bottom right of the HCAD page which has porch, patio etc
+    # Selecting the <th>, using regex, that has the words Building Areas
     building_area_table = soup.find('th', string=re.compile('(Building Areas)')).parent.parent
+    # Getting all the data from the above table
     building_area_data = building_area_table.find_all('td')
+    # Using list comprehension to extract labels and values from the above list separately
     building_area_labels = [label.text.title() for label in building_area_data[0::2]]
     building_area_values = [label.text for label in building_area_data[1::2]]
 
-    # Extra Features like detached garage, pool etc
+    # Some properties have Extra Features which show up on a separate table at the bottm
+    # These can be detached garage, pool etc
     check_extra = soup.find('th', text="Extra Features")
     if check_extra:
         extra_table = check_extra.parent.parent
@@ -83,15 +110,19 @@ def get_data(stnum, stname):
         for row in extra_rows[1:]:
             extra_cells = row.find_all('td')
             extra_raw = [cell.text for cell in extra_cells]
+            # Appending the extra features labels/values to the lists created above
             building_area_labels.append(extra_raw[1].title())
             building_area_values.append(extra_raw[-2])
     else:
         pass
 
+    # Creating a tuple from the labels and values list created above to join them
     building_area = tuple(zip(building_area_labels, building_area_values))
 
+    # Setting default values as 0
     porch, patio, deck, garage = [0] * 4
 
+    # Going through each value in building_area to get total porch, patio etc
     for k, v in building_area:
         if 'porch' in k.lower():
             porch += int(v)
@@ -102,27 +133,36 @@ def get_data(stnum, stname):
         if 'garage' in k.lower():
             garage += int(v)
 
+    # Getting the full formatted address
     address_row = soup.find('td', string="Property Address:").parent
+    # The address in HCAD includes a <br\> so using ".contents" to create a list
+    # that automatically splits the values
     address_raw = address_row.find('th').contents
+    # In the above list, usually the first element will be street number and name
+    # second element will be the <br\>
+    # third element will be city, state, zip
     address = f'{address_raw[0]}, {address_raw[2]}'.strip()
 
-    # Alternative method to get Address
+    # Alternative method to get Address above
     # address_raw = str(address_row.find('th')).replace('<br/>', ', ').replace('</th>', '')
     # address = re.sub(r"<([^>]+)>", "", address_raw).strip()
 
-    # Purchase date
+    # Getting the Purchase date
+    # To get date we have to click on Ownership History link that opens a popup
+    # Finding and building the final Ownership History link
     ownership_url = "https://public.hcad.org/" + soup.find('a', string="Ownership History")['href']
 
+    # Going to the Ownership History link
     s2 = r.post(ownership_url, headers=headers)
+    # Checking for errors
     s2.raise_for_status()
-
+    # Parsing the date to BeautifulSoup
     soup2 = BeautifulSoup(s2.text, 'lxml')
 
+    # Finding the table with the purchase date
     owner_table = soup2.find_all('table')[1]
+    # Getting the cell that contains Effective Date and moving to the next two siblings
     purchase_date = owner_table.find('td', text="Effective Date").find_next('td').find_next('td').text
-
-    # Extra Features
-    # Description: Frame Detached Garage Units: 484
 
     # Creating a House instance with the above scraped data
     results = House(address=address,
@@ -141,10 +181,12 @@ def get_data(stnum, stname):
                     stories='',
                     elements=building_area)
 
+    # Returning an instance of the House object with all the data
     return results
 
 
 # Ask the user for the address to search
+# TODO: This is not working yet
 query = input("Enter Property Address > ")
 
 # Running a search on the address
