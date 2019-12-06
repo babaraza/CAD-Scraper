@@ -72,8 +72,22 @@ def get_data(stnum, stname):
     # Building Areas all items 8
     building_area_table = soup.find('th', string=re.compile('(Building Areas)')).parent.parent
     building_area_data = building_area_table.find_all('td')
-    building_area_labels = [label.text for label in building_area_data[0::2]]
+    building_area_labels = [label.text.title() for label in building_area_data[0::2]]
     building_area_values = [label.text for label in building_area_data[1::2]]
+
+    # Extra Features like detached garage, pool etc
+    check_extra = soup.find('th', text="Extra Features")
+    if check_extra:
+        extra_table = check_extra.parent.parent
+        extra_rows = extra_table.find_all('tr')[2:]
+        for row in extra_rows[1:]:
+            extra_cells = row.find_all('td')
+            extra_raw = [cell.text for cell in extra_cells]
+            building_area_labels.append(extra_raw[1].title())
+            building_area_values.append(extra_raw[-2])
+    else:
+        pass
+
     building_area = tuple(zip(building_area_labels, building_area_values))
 
     porch, patio, deck, garage = [0] * 4
@@ -134,7 +148,10 @@ def get_data(stnum, stname):
 query = input("Enter Property Address > ")
 
 # Running a search on the address
-result = get_data(stnum='', stname='')
+try:
+    result = get_data(stnum='', stname='')
+except AttributeError:
+    result = None
 
 # Checking if the property was found
 if result:
