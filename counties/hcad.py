@@ -185,24 +185,25 @@ def get_data(stnum, stname):
     return results
 
 
-# Ask the user for the address to search
-query = input("Enter Property Address > ")
+if __name__ == '__main__':
+    # Ask the user for the address to search
+    query = input("Enter Property Address > ")
 
-# Split the inputted address into street number and street name using regex
-# Find all the numbers at the start of the address
-street_number = re.findall(r'^[0-9]*', query)[0]
-# Find all the characters in the address that are not numbers
-street_name = re.findall(r'[^0-9]+', query)[0].strip()
+    # Split the inputted address into street number and street name using regex
+    # Find all the numbers at the start of the address
+    street_number = re.findall(r'^[0-9]*', query)[0]
+    # Find all the characters in the address that are not numbers
+    street_name = re.findall(r'[^0-9]+', query)[0].strip()
 
-# Running a search on the address
-try:
-    result = get_data(stnum=street_number, stname=street_name)
-except AttributeError:
-    result = None
+    # Running a search on the address
+    try:
+        result = get_data(stnum=street_number, stname=street_name)
+    except AttributeError:
+        result = None
 
-# Checking if the property was found
-if result:
-    pyperclip.copy(format_result(result))
-else:
-    print("Property Not Found")
-    pyperclip.copy("Property Not Found")
+    # Checking if the property was found
+    if result:
+        pyperclip.copy(format_result(result))
+    else:
+        print("Property Not Found")
+        pyperclip.copy("Property Not Found")

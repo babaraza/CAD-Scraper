@@ -197,15 +197,16 @@ def get_data(id_one, id_two):
     return results
 
 
-# Ask the user for the address to search
-query = input("Enter Property Address > ")
+if __name__ == '__main__':
+    # Ask the user for the address to search
+    query = input("Enter Property Address > ")
 
-# Running a search on the address
-result = get_property_id(query.strip())
+    # Running a search on the address
+    result = get_property_id(query.strip())
 
-# Checking if the property was found
-if result:
-    pyperclip.copy(format_result(result))
-else:
-    print("Property Not Found")
-    pyperclip.copy("Property Not Found")
+    # Checking if the property was found
+    if result:
+        pyperclip.copy(format_result(result))
+    else:
+        print("Property Not Found")
+        pyperclip.copy("Property Not Found")
