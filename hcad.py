@@ -29,8 +29,8 @@ def get_data(stnum, stname):
 
     # These are the params for the POST call to HCAD url
     payload = {'TaxYear': '2019',
-               'stnum': stnum,      # This is the street number
-               'stname': stname}    # This is the street name
+               'stnum': stnum,  # This is the street number
+               'stname': stname}  # This is the street name
 
     s = r.post(url, headers=headers, data=payload)
 
@@ -186,12 +186,17 @@ def get_data(stnum, stname):
 
 
 # Ask the user for the address to search
-# TODO: This is not working yet
 query = input("Enter Property Address > ")
+
+# Split the inputted address into street number and street name using regex
+# Find all the numbers at the start of the address
+street_number = re.findall(r'^[0-9]*', query)[0]
+# Find all the characters in the address that are not numbers
+street_name = re.findall(r'[^0-9]+', query)[0].strip()
 
 # Running a search on the address
 try:
-    result = get_data(stnum='', stname='')
+    result = get_data(stnum=street_number, stname=street_name)
 except AttributeError:
     result = None
 
