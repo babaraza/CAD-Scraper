@@ -1,5 +1,5 @@
-from counties import fbcad, hcad
 from utilities import format_result
+from counties import fbcad, hcad
 import pyperclip
 import re
 
@@ -7,7 +7,7 @@ selection = input('(1) FBCAD or (2) HCAD > ')
 
 if selection == '1':
     # Ask the user for the address to search
-    query = input("Enter Property Address > ")
+    query = input("\nEnter FBCAD Property Address > ")
 
     # Running a search on the address
     result = fbcad.get_property_id(query.strip())
@@ -21,7 +21,7 @@ if selection == '1':
 
 elif selection == '2':
     # Ask the user for the address to search
-    query = input("Enter Property Address > ")
+    query = input("\nEnter HCAD Property Address > ")
 
     # Split the inputted address into street number and street name using regex
     # Find all the numbers at the start of the address
