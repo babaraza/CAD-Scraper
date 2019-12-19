@@ -122,6 +122,9 @@ def get_data(stnum, stname):
     # Setting default values as 0
     porch, patio, deck, garage = [0] * 4
 
+    # Setting default number of stories
+    stories = 1
+
     # Going through each value in building_area to get total porch, patio etc
     for k, v in building_area:
         if 'porch' in k.lower():
@@ -132,6 +135,8 @@ def get_data(stnum, stname):
             deck += int(v)
         if 'garage' in k.lower():
             garage += int(v)
+        if 'upr' in k.lower():
+            stories = 2
 
     # Getting the full formatted address
     address_row = soup.find('td', string="Property Address:").parent
@@ -178,7 +183,7 @@ def get_data(stnum, stname):
                     bedrooms='',
                     baths=baths,
                     fireplace=fireplace,
-                    stories='',
+                    stories=stories,
                     elements=building_area)
 
     # Returning an instance of the House object with all the data
