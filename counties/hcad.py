@@ -166,8 +166,11 @@ def get_data(stnum, stname):
 
     # Finding the table with the purchase date
     owner_table = soup2.find_all('table')[1]
-    # Getting the cell that contains Effective Date and moving to the next two siblings
-    purchase_date = owner_table.find('td', text="Effective Date").find_next('td').find_next('td').text
+    # Getting the cell that contains the text "Effective Date"
+    effective_date = owner_table.find('td', text="Effective Date")
+    # Moving to the next siblings to get the buyer name and purchase date
+    buyer = effective_date.find_next('td').text
+    purchase_date = effective_date.find_next('td').find_next('td').text
 
     # Creating a House instance with the above scraped data
     results = House(address=address,
@@ -179,7 +182,7 @@ def get_data(stnum, stname):
                     deck=deck,
                     garage=garage,
                     purchase_date=purchase_date,
-                    buyer='',
+                    buyer=buyer,
                     bedrooms='',
                     baths=baths,
                     fireplace=fireplace,
