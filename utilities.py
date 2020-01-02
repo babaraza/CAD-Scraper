@@ -53,6 +53,7 @@ MARKET VAL : {house.value}
 FLOOD QUOTE: 
 
 Raw Data:
+Owner: {house.buyer}
 {raw_data}
 """
     return template
