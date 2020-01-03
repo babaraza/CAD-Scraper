@@ -34,6 +34,7 @@ def go_to(selection):
 
         else:
             # Running a search on the address
+            print("\nSearching...")
             result = fbcad.get_property_id(query.strip())
 
             # Checking if the property was found
@@ -41,8 +42,9 @@ def go_to(selection):
                 pyperclip.copy(format_result(result))
 
             else:
-                print("Property Not Found")
-                pyperclip.copy("Property Not Found")
+                print(f'\nNo Results for: {query.strip()}')
+                os.system('pause')
+                start_program()
 
     elif selection == '2':
         # Ask the user for the address to search
@@ -61,6 +63,8 @@ def go_to(selection):
             street_name = re.findall(r'[^0-9]+', query)[0].strip()
 
             # Running a search on the address
+            print("\nSearching...")
+
             try:
                 result = hcad.get_data(stnum=street_number, stname=street_name)
 
@@ -69,11 +73,12 @@ def go_to(selection):
 
             # Checking if the property was found
             if result:
-
                 pyperclip.copy(format_result(result))
+
             else:
-                print("Property Not Found")
-                pyperclip.copy("Property Not Found")
+                print(f'\nNo Results for: {query.strip()}')
+                os.system('pause')
+                start_program()
 
     else:
         start_program()
