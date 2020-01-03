@@ -106,8 +106,8 @@ def get_data(id_one, id_two):
 
     # Iterating over the tuple called elements of key/value pairs to extract data
     for k, v in elements:
-        # If the word Porch appears in the element label above (k)
-        # then add its value (v) to the variable porch
+        # If the word Porch/Patio appears in the element label above (k)
+        # then add its value (v) to the variable porch/patio
         if 'Porch' in k:
             porch += int(v)
         if 'Patio' in k:
