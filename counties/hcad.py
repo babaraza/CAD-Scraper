@@ -116,6 +116,16 @@ def get_data(stnum, stname):
     else:
         pass
 
+    # Getting HCAD Account Number from the page <title>
+    # HCAD website has the account number as part of the <title> tag
+    acct_number_data = soup.title.string
+    # Getting the last item in the above string which is the acct number
+    acct_number = acct_number_data.split()[-1]
+
+    # Adding the HCAD Account Number to the building_area arrays
+    building_area_labels.append("Acct #")
+    building_area_values.append(acct_number)
+
     # Creating a tuple from the labels and values list created above to join them
     building_area = tuple(zip(building_area_labels, building_area_values))
 

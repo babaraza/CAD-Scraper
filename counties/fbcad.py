@@ -75,6 +75,9 @@ def get_data(id_one, id_two):
     # Getting the first set of data we need which is in a <td>
     header_data = soup.find_all('td', class_='propertyData')
 
+    # Getting the Account # / Property ID
+    acct_number = header_data[0].text
+
     # The complete address for the house
     formatted_address = header_data[2].text
 
@@ -96,6 +99,10 @@ def get_data(id_one, id_two):
     # Skipping the first cell of values as it is the table header
     # Also removing the ',' from the values to allow conversion to int
     element_values = [item.text.replace(',', '').replace('-', '0') for item in house_elements_values[1:]]
+
+    # Adding the FBCAD Account Number to the element arrays
+    element_labels.append("Acct #")
+    element_values.append(acct_number)
 
     # Creating a tuple from the element labels and element values
     elements = tuple(zip(element_labels, element_values))
