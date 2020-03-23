@@ -165,22 +165,30 @@ def get_data(stnum, stname):
     # Getting the Purchase date
     # To get date we have to click on Ownership History link that opens a popup
     # Finding and building the final Ownership History link
-    ownership_url = "https://public.hcad.org/" + soup.find('a', string="Ownership History")['href']
+    ownership_url = "https://public.hcad.org" + soup.find('a', string="Ownership History")['href']
 
     # Going to the Ownership History link
     s2 = r.post(ownership_url, headers=headers)
-    # Checking for errors
-    s2.raise_for_status()
-    # Parsing the date to BeautifulSoup
-    soup2 = BeautifulSoup(s2.text, 'lxml')
 
-    # Finding the table with the purchase date
-    owner_table = soup2.find_all('table')[1]
-    # Getting the cell that contains the text "Effective Date"
-    effective_date = owner_table.find('td', text="Effective Date")
-    # Moving to the next siblings to get the buyer name and purchase date
-    buyer = effective_date.find_next('td').text
-    purchase_date = effective_date.find_next('td').find_next('td').text
+    # Checking for errors
+    try:
+        s2.raise_for_status()
+
+        # Parsing the date to BeautifulSoup
+        soup2 = BeautifulSoup(s2.text, 'lxml')
+
+        # Finding the table with the purchase date
+        owner_table = soup2.find_all('table')[1]
+        # Getting the cell that contains the text "Effective Date"
+        effective_date = owner_table.find('td', text="Effective Date")
+        # Moving to the next siblings to get the buyer name and purchase date
+        buyer = effective_date.find_next('td').text
+        purchase_date = effective_date.find_next('td').find_next('td').text
+
+    except requests.exceptions.HTTPError as e:
+        purchase_date = "Not found"
+        buyer = "Not found"
+        print(e)
 
     # Creating a House instance with the above scraped data
     results = House(address=address,
