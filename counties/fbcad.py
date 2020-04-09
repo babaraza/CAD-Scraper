@@ -28,22 +28,26 @@ def get_property_id(address):
     # The FBCAD URL for the initial query
     url = 'https://fbcad.org/ProxyT/Search/Properties/quick'
 
-    s = r.get(url, headers=headers, params=parameters)
+    try:
+        s = r.get(url, headers=headers, params=parameters)
 
-    # Check for errors
-    s.raise_for_status()
+        # Check for errors
+        s.raise_for_status()
 
-    # The returned data is in JSON format so parsing JSON
-    json_data = json.loads(s.text)
+        # The returned data is in JSON format so parsing JSON
+        json_data = json.loads(s.text)
 
-    # In the JSON results, Record Count shows 0 if property not found
-    if json_data['RecordCount'] != 0:
-        # If property is found, retrieve the property IDs
-        # and call get_data()
-        id_one = json_data['ResultList'][0]['PropertyQuickRefID']
-        id_two = json_data['ResultList'][0]['PartyQuickRefID']
-        return get_data(id_one, id_two)
-    else:
+        # In the JSON results, Record Count shows 0 if property not found
+        if json_data['RecordCount'] != 0:
+            # If property is found, retrieve the property IDs
+            # and call get_data()
+            id_one = json_data['ResultList'][0]['PropertyQuickRefID']
+            id_two = json_data['ResultList'][0]['PartyQuickRefID']
+            return get_data(id_one, id_two)
+        else:
+            return None
+
+    except requests.exceptions.HTTPError as e:
         return None
 
 
