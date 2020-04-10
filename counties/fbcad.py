@@ -23,10 +23,11 @@ def get_property_id(address):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0'}
 
     # These are the params for the GET call to FBCAD url
-    parameters = {'ty': 2019, 'f': address}
+    # parameters = {'ty': 2020, 'f': address}
+    parameters = {'keywords': address}
 
     # The FBCAD URL for the initial query
-    url = 'https://fbcad.org/ProxyT/Search/Properties/quick'
+    url = 'https://esearch.fbcad.org/Search/SearchResults'
 
     try:
         s = r.get(url, headers=headers, params=parameters)
@@ -38,16 +39,17 @@ def get_property_id(address):
         json_data = json.loads(s.text)
 
         # In the JSON results, Record Count shows 0 if property not found
-        if json_data['RecordCount'] != 0:
+        if json_data['TotalResults'] != 0:
             # If property is found, retrieve the property IDs
             # and call get_data()
-            id_one = json_data['ResultList'][0]['PropertyQuickRefID']
-            id_two = json_data['ResultList'][0]['PartyQuickRefID']
+            id_one = json_data['ResultsList'][0]['PropertyId']
+            id_two = json_data['ResultsList'][0]['DetailUrl']
             return get_data(id_one, id_two)
         else:
             return None
 
     except requests.exceptions.HTTPError as e:
+        print(e)
         return None
 
 
@@ -67,56 +69,55 @@ def get_data(id_one, id_two):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0'}
 
     # These are the params for the specific property
-    parameters = {'PropertyQuickRefID': id_one, 'PartyQuickRefID': id_two}
-    url = 'https://fbcad.org/Property-Detail'
+    url = 'https://esearch.fbcad.org' + id_two
 
-    s = r.get(url, headers=headers, params=parameters)
+    s = r.get(url, headers=headers)
 
     # Parsing results from above url through BeautifulSoup
     soup = BeautifulSoup(s.text, 'lxml')
 
-    # The property page on FBCAD is made up for tables
-    # Getting the first set of data we need which is in a <td>
-    header_data = soup.find_all('td', class_='propertyData')
+    # The property page on FBCAD is made up of tables
+    tables = soup.find_all('div', class_="table-responsive")
 
-    # Getting the Account # / Property ID
-    acct_number = header_data[0].text
+    house_elements_table = tables[1]
+    house_value_table = tables[3]
+    house_deed_table = tables[-1]
 
     # The complete address for the house
-    formatted_address = header_data[2].text
+    formatted_address = soup.find('th', text='Address:').next_element.next_element.text
 
     # The appraised value for the house
-    appraised_value = header_data[3].text
+    house_value_rows = house_value_table.find_all('tr')[1:3]
+    for row in house_value_rows:
+        cells = row.find_all('td')
+        if cells[-1].text != "N/A":
+            appraised_value = cells[-1].text
 
     # The square footage for the house
-    square_foot = soup.find_all(class_='improvementsFieldData')[3].text
+    sqft_raw = house_elements_table.find('div', class_="panel-table-info").find_all('span')[-1].text.split()[2]
+    square_foot = sqft_raw.replace('sqft', '')[:-3]
 
-    # Element labels: Main Area, Attached Garage, Open Porch etc
-    house_elements_labels = soup.find_all(class_='segmentTableColumn2')
+    # Elements: Main Area, Attached Garage, Open Porch etc
+    house_elements_table_rows = house_elements_table.find_all('tr')
 
-    # Skipping the first cell of labels as it is the table header
-    element_labels = [item.text for item in house_elements_labels[1:]]
+    house_elements = []
 
-    # Element values for each of the labels above
-    house_elements_values = soup.find_all(class_='segmentTableColumn4')
+    # Getting the Account # / Property ID
+    acct_number = id_one
+    # Adding the FBCAD Account Number to the element arrays
+    house_elements.append(["Acct #", acct_number])
 
     # Skipping the first cell of values as it is the table header
-    # Also removing the ',' from the values to allow conversion to int
-    element_values = [item.text.replace(',', '').replace('-', '0') for item in house_elements_values[1:]]
-
-    # Adding the FBCAD Account Number to the element arrays
-    element_labels.append("Acct #")
-    element_values.append(acct_number)
-
-    # Creating a tuple from the element labels and element values
-    elements = tuple(zip(element_labels, element_values))
+    for row in house_elements_table_rows[1:]:
+        cells = row.find_all('td')
+        house_elements.append([cells[1].text.strip(), cells[-1].text.replace('.00', '').strip()])
 
     # Setting the default value for these variables to 0
     porch, patio, deck, garage = [0] * 4
     stories = 1
 
     # Iterating over the tuple called elements of key/value pairs to extract data
-    for k, v in elements:
+    for k, v in house_elements:
         # If the word Porch/Patio appears in the element label above (k)
         # then add its value (v) to the variable porch/patio
         if 'Porch' in k:
@@ -132,60 +133,25 @@ def get_data(id_one, id_two):
 
     # Get the year built
     try:
-        year_built = soup.find_all(class_='segmentTableColumn3')[1].text
+        year_built = house_elements_table_rows[1].find_all('td')[-2].text
     except AttributeError:
         year_built = "Not Found"
 
-    # Sub-elements: Bedrooms, Baths, Heat and AC etc
-    # Creating empty list to hold the sub_elements
-    sub_elements = []
-
-    # Selecting the table that has the sub_elements
-    sub_elements_table = soup.find('table', class_='segmentDetailsTable')
-
-    # Getting all the rows inside the sub_elements table
-    sub_elements_table_rows = sub_elements_table.find_all('tr')
-
-    # Iterating over each row
-    for row in sub_elements_table_rows:
-        # Getting all cells in each row
-        cells = row.find_all('td')
-        # The sub_elements section has six columns of data
-        # We only need the middle two columns
-        for cell in cells[2:4]:
-            # Adding the sub_elements labels and values to the sub_elements list
-            sub_elements.append(cell.text)
-
-    # Getting the number of bedrooms, bathrooms, and fireplace
-    bedrooms = sub_elements[1]
-    baths = float(str(sub_elements[3])[:3])
-    fireplace = sub_elements[7]
-
-    # Selecting the Sales History table to get last sale information
-    # Finding the element that has SALES HISTORY text and then selecting
-    # it's parent and then it's parent
-    sales_table_raw = soup.find(class_='sectionHeader', string='SALES HISTORY').parent.parent
-
-    # Selecting the first table inside the selection above
-    sales_table = sales_table_raw.find('table')
-
-    # Getting all the rows <tr>
-    sales_table_rows = sales_table.find_all('tr')
-
+    # Selecting the Deed History table to get last sale information
     # Getting the first row of data which includes deed date, seller, buyer etc
-    sales_data = sales_table_rows[1].text.strip().split('\n')
-
-    # Extracting the Purchase Date
-    try:
-        purchase_date = sales_data[0]
-    except:
-        purchase_date = "Not Found"
-
-    # Extracting the name of the buyer
-    try:
-        buyer = sales_data[2]
-    except:
-        buyer = "Not Found"
+    house_deed_rows = house_deed_table.find_all('tr')[1:2]
+    for row in house_deed_rows:
+        cells = row.find_all('td')
+        # Extracting the Purchase Date
+        try:
+            purchase_date = cells[0].text
+        except None:
+            purchase_date = "Not Found"
+        # Extracting the name of the buyer
+        try:
+            buyer = cells[4].text
+        except None:
+            buyer = "Not Found"
 
     # Creating a House instance with the above scraped data
     results = House(address=formatted_address,
@@ -198,11 +164,11 @@ def get_data(id_one, id_two):
                     garage=garage,
                     purchase_date=purchase_date,
                     buyer=buyer,
-                    bedrooms=bedrooms,
-                    baths=baths,
-                    fireplace=fireplace,
+                    bedrooms='',
+                    baths='',
+                    fireplace='',
                     stories=stories,
-                    elements=elements)
+                    elements=house_elements)
 
     # Return the House object
     return results
