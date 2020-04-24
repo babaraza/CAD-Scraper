@@ -110,7 +110,7 @@ def get_data(id_one, id_two):
     # Skipping the first cell of values as it is the table header
     for row in house_elements_table_rows[1:]:
         cells = row.find_all('td')
-        house_elements.append([cells[1].text.strip(), cells[-1].text.replace('.00', '').strip()])
+        house_elements.append([cells[1].text.strip(), cells[-2].text.replace('.00', '').strip()])
 
     # Setting the default value for these variables to 0
     porch, patio, deck, garage = [0] * 4
