@@ -133,7 +133,7 @@ def get_data(id_one, id_two):
 
     # Get the year built
     try:
-        year_built = house_elements_table_rows[1].find_all('td')[-2].text
+        year_built = house_elements_table_rows[1].find_all('td')[-3].text
     except AttributeError:
         year_built = "Not Found"
 
