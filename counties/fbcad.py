@@ -77,24 +77,20 @@ def get_data(id_one, id_two):
     soup = BeautifulSoup(s.text, 'lxml')
 
     # The property page on FBCAD is made up of tables
-    tables = soup.find_all('div', class_="table-responsive")
+    tables = soup.find_all('table')
 
-    house_elements_table = tables[1]
-    house_value_table = tables[3]
+    house_appraisal_table = tables[1]
+    house_elements_table = tables[3]
     house_deed_table = tables[-1]
 
     # The complete address for the house
     formatted_address = soup.find('th', text='Address:').next_element.next_element.text
 
     # The appraised value for the house
-    house_value_rows = house_value_table.find_all('tr')[1:3]
-    for row in house_value_rows:
-        cells = row.find_all('td')
-        if cells[-1].text != "N/A":
-            appraised_value = cells[-1].text
+    appraised_value = house_appraisal_table.find_all('tr')[-1].text.split(':')[1]
 
     # The square footage for the house
-    sqft_raw = house_elements_table.find('div', class_="panel-table-info").find_all('span')[-1].text.split()[2]
+    sqft_raw = soup.find('div', class_="panel-table-info").find_all('span')[-1].text.split()[2]
     square_foot = sqft_raw.replace('sqft', '')[:-3]
 
     # Elements: Main Area, Attached Garage, Open Porch etc
@@ -105,10 +101,31 @@ def get_data(id_one, id_two):
     # Getting the Account # / Property ID
     acct_number = id_one
     # Adding the FBCAD Account Number to the element arrays
-    house_elements.append(["Acct #", acct_number])
+    house_elements.append(["FBCAD", acct_number])
 
-    # Skipping the first cell of values as it is the table header
-    for row in house_elements_table_rows[1:]:
+    # Getting the cell with the house details such as baths etc
+    detail_row = house_elements_table_rows[1]
+    detail_cells = detail_row.find_all('td')
+
+    # Manually adding Main Area (first floor) label and square footage
+    house_elements.append(['Main Area', detail_cells[-2].text.replace('.00', '').strip()])
+
+    # Getting the rest of the details from the first cell that contains baths etc
+    detail_cells_divs = detail_cells[1].find_all('div')
+
+    bedrooms, baths, fireplace = [0] * 3
+
+    for dcell in detail_cells_divs:
+        data = dcell.text.split(":")
+        if data[0].lower() == "bedrooms":
+            bedrooms = data[1]
+        elif data[0].lower() == "bathrooms":
+            baths = data[1]
+        elif data[0].lower() == "fireplaces":
+            fireplace = data[1]
+
+    # Skipping the first row of values as it is the table header
+    for row in house_elements_table_rows[2:]:
         cells = row.find_all('td')
         house_elements.append([cells[1].text.strip(), cells[-2].text.replace('.00', '').strip()])
 
@@ -164,9 +181,9 @@ def get_data(id_one, id_two):
                     garage=garage,
                     purchase_date=purchase_date,
                     buyer=buyer,
-                    bedrooms='',
-                    baths='',
-                    fireplace='',
+                    bedrooms=bedrooms,
+                    baths=baths,
+                    fireplace=fireplace,
                     stories=stories,
                     elements=house_elements)
 
