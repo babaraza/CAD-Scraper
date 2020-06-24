@@ -123,7 +123,7 @@ def get_data(stnum, stname):
     acct_number = acct_number_data.split()[-1]
 
     # Adding the HCAD Account Number to the building_area arrays
-    building_area_labels.append("Acct #")
+    building_area_labels.append("HCAD")
     building_area_values.append(acct_number)
 
     # Creating a tuple from the labels and values list created above to join them

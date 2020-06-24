@@ -91,7 +91,7 @@ def get_data(id_one, id_two):
 
     # The square footage for the house
     sqft_raw = soup.find('div', class_="panel-table-info").find_all('span')[-1].text.split()[2]
-    square_foot = sqft_raw.replace('sqft', '')[:-3]
+    square_foot = sqft_raw.replace('sqft', '')[:-3].replace(',', '')
 
     # Elements: Main Area, Attached Garage, Open Porch etc
     house_elements_table_rows = house_elements_table.find_all('tr')
@@ -135,6 +135,7 @@ def get_data(id_one, id_two):
 
     # Iterating over the tuple called elements of key/value pairs to extract data
     for k, v in house_elements:
+        v = v.replace(',', '')
         # If the word Porch/Patio appears in the element label above (k)
         # then add its value (v) to the variable porch/patio
         if 'Porch' in k:
