@@ -42,14 +42,22 @@ def get_data(stnum, stname):
 
     # Getting the latest appraised value
     # Since the table containing the value doesnt have an ID etc
-    # I am selecting the cell with the text "Value as of..." then finding its parent table
-    value_table = soup.find('td', string=re.compile("^Value as of")).parent.parent
-    # Getting the second last row in the above table
-    value_rows = value_table.find_all('tr')[-2]
-    # Getting all the cells in the above table
-    value_cells = value_rows.find_all('td')
-    # Extracting the appraised value
-    value = value_cells[-1].text.strip()
+    # I am selecting the <th> with the text "Valuations" then finding its parent table
+    value_table = soup.find('th', string=re.compile("^Valuations")).parent.parent
+
+    # OLD METHOD for (appraised value):
+    # # Getting the second last row in the above table
+    # value_rows = value_table.find_all('tr')[-2]
+    # # Getting all the cells in the above table
+    # value_cells = value_rows.find_all('td')
+    # # Extracting the appraised value
+    # value = value_cells[-1].text.strip()
+
+    # NEW METHOD for (appraised value):
+    # I am using regex to get the largest number on the page
+    values_raw = value_table.find_all('td', string=re.compile("\d+,\d+"))
+    values_formatted = [int((re.sub(r'[^\d+,\d+]', '', v.text)).replace(',','')) for v in values_raw]
+    value = "{:,}".format(max(values_formatted))
 
     # Getting the year built and sqft by finding the parent table
     year_table = soup.find('th', string="Year Built").parent.parent
