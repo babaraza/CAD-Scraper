@@ -56,17 +56,11 @@ def go_to(selection):
             start_program()
 
         else:
-            # Split the inputted address into street number and street name using regex
-            # Find all the numbers at the start of the address
-            street_number = re.findall(r'^[0-9]*', query)[0]
-            # Find all the characters in the address that are not numbers
-            street_name = re.findall(r'[^0-9]+', query)[0].strip()
-
             # Running a search on the address
             print("\nSearching...")
 
             try:
-                result = hcad.get_data(stnum=street_number, stname=street_name)
+                result = hcad.get_data(query.strip())
 
             except AttributeError:
                 result = None

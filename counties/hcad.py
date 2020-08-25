@@ -2,16 +2,16 @@ from utilities import House, format_result
 from bs4 import BeautifulSoup
 import pyperclip
 import requests
+import datetime
 import re
 
 
-def get_data(stnum, stname):
+def get_data(address):
     """
     Goes to the HCAD website and searches the inputted address
     If found, scrapes all the data and returns an House object
 
-    :param stnum: User inputted street number
-    :param stname: User inputted street name
+    :param address: User inputted query
     :return: An instance of the House object containing all scraped data
     """
 
@@ -27,10 +27,25 @@ def get_data(stnum, stname):
     # The HCAD URL for the initial query
     url = 'https://public.hcad.org/records/QuickRecord.asp'
 
-    # These are the params for the POST call to HCAD url
-    payload = {'TaxYear': '2019',
-               'stnum': stnum,  # This is the street number
-               'stname': stname}  # This is the street name
+    try:
+        property_id = int(address)
+
+        # These are the params for the POST call to HCAD url
+        payload = {'TaxYear': datetime.datetime.now().year,
+                   'searchtype': 'strap',
+                   'searchval': property_id}  # This is the property id
+
+    except ValueError:
+        # Split the inputted address into street number and street name using regex
+        # Find all the numbers at the start of the address
+        stnum = re.findall(r'^[0-9]*', address)[0]
+        # Find all the characters in the address that are not numbers
+        stname = re.findall(r'[^0-9]+', address)[0].strip()
+
+        # These are the params for the POST call to HCAD url
+        payload = {'TaxYear': datetime.datetime.now().year,
+                   'stnum': stnum,  # This is the street number
+                   'stname': stname}  # This is the street name
 
     s = r.post(url, headers=headers, data=payload)
 
@@ -56,7 +71,7 @@ def get_data(stnum, stname):
     # NEW METHOD for (appraised value):
     # I am using regex to get the largest number on the page
     values_raw = value_table.find_all('td', string=re.compile("\d+,\d+"))
-    values_formatted = [int((re.sub(r'[^\d+,\d+]', '', v.text)).replace(',','')) for v in values_raw]
+    values_formatted = [int((re.sub(r'[^\d+,\d+]', '', v.text)).replace(',', '')) for v in values_raw]
     value = "{:,}".format(max(values_formatted))
 
     # Getting the year built and sqft by finding the parent table
@@ -187,7 +202,7 @@ def get_data(stnum, stname):
 
         # Finding the table with the purchase date
         owner_table = soup2.find_all('table')[1]
-        # Getting the cell that contains the text "Effective Date"
+        # Getting the cell that contains the text "Effective Date"
         effective_date = owner_table.find('td', text="Effective Date")
         # Moving to the next siblings to get the buyer name and purchase date
         buyer = effective_date.find_next('td').text
@@ -223,15 +238,9 @@ if __name__ == '__main__':
     # Ask the user for the address to search
     query = input("Enter Property Address > ")
 
-    # Split the inputted address into street number and street name using regex
-    # Find all the numbers at the start of the address
-    street_number = re.findall(r'^[0-9]*', query)[0]
-    # Find all the characters in the address that are not numbers
-    street_name = re.findall(r'[^0-9]+', query)[0].strip()
-
     # Running a search on the address
     try:
-        result = get_data(stnum=street_number, stname=street_name)
+        result = get_data(query)
     except AttributeError:
         result = None
 
