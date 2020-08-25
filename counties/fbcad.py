@@ -43,8 +43,7 @@ def get_property_id(address):
             # If property is found, retrieve the property IDs
             # and call get_data()
             id_one = json_data['ResultsList'][0]['PropertyId']
-            id_two = json_data['ResultsList'][0]['DetailUrl']
-            return get_data(id_one, id_two)
+            return get_data(id_one)
         else:
             return None
 
@@ -53,12 +52,11 @@ def get_property_id(address):
         return None
 
 
-def get_data(id_one, id_two):
+def get_data(property_id):
     """
     Gets all the data from the FBCAD website for the particular property.
 
-    :param id_one: FBCAD Property ID
-    :param id_two: FBCAD Quick Reference ID
+    :param property_id: FBCAD Quick Reference ID "/Property/View/R416144"
     :return: An instance of the House object containing the results
     """
 
@@ -69,7 +67,7 @@ def get_data(id_one, id_two):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0'}
 
     # These are the params for the specific property
-    url = 'https://esearch.fbcad.org' + id_two
+    url = 'https://esearch.fbcad.org/Property/View/' + property_id
 
     s = r.get(url, headers=headers)
 
@@ -99,7 +97,7 @@ def get_data(id_one, id_two):
     house_elements = []
 
     # Getting the Account # / Property ID
-    acct_number = id_one
+    acct_number = property_id
     # Adding the FBCAD Account Number to the element arrays
     house_elements.append(["FBCAD", acct_number])
 
