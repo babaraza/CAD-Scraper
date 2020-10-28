@@ -2,7 +2,6 @@ from utilities import format_result
 from counties import fbcad, hcad
 import pyperclip
 import os
-import re
 
 
 def start_program():
