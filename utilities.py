@@ -45,6 +45,7 @@ GARAGE     : {house.garage}
 FIREPLACE  : {house.fireplace}
 OPEN PORCH : {house.porch}
 PATIO      : {house.patio}
+WINDOW     : 
 DOGS       : 
 PAY        : 
 EXTERIOR   : 
