@@ -125,7 +125,7 @@ def get_data(property_id):
     # Skipping the first row of values as it is the table header
     for row in house_elements_table_rows[2:]:
         cells = row.find_all('td')
-        house_elements.append([cells[1].text.strip(), cells[-2].text.replace('.00', '').strip()])
+        house_elements.append([cells[1].text.strip(), cells[-1].text.replace('.00', '').strip()])
 
     # Setting the default value for these variables to 0
     porch, patio, deck, garage = [0] * 4
@@ -149,7 +149,7 @@ def get_data(property_id):
 
     # Get the year built
     try:
-        year_built = house_elements_table_rows[1].find_all('td')[-3].text
+        year_built = house_elements_table_rows[1].find_all('td')[-2].text
     except AttributeError:
         year_built = "Not Found"
 
