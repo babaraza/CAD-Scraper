@@ -70,9 +70,12 @@ def get_data(address):
 
     # NEW METHOD for (appraised value):
     # I am using regex to get the largest number on the page
-    values_raw = value_table.find_all('td', string=re.compile("\d+,\d+"))
-    values_formatted = [int((re.sub(r'[^\d+,\d+]', '', v.text)).replace(',', '')) for v in values_raw]
-    value = "{:,}".format(max(values_formatted))
+    try:
+        values_raw = value_table.find_all('td', string=re.compile("\d+,\d+"))
+        values_formatted = [int((re.sub(r'[^\d+,\d+]', '', v.text)).replace(',', '')) for v in values_raw]
+        value = "{:,}".format(max(values_formatted))
+    except ValueError:
+        value = 0
 
     # Getting the year built and sqft by finding the parent table
     year_table = soup.find('th', string="Year Built").parent.parent
@@ -83,7 +86,7 @@ def get_data(address):
     # Extracting the year built
     year_built = year_cells[1].text.strip()
     # Since the square foot is in the same table, getting sqft from same place
-    sqft = year_cells[-2].text.strip()
+    sqft = re.sub(r'\D', '', year_cells[-2].text.strip())
 
     # Selecting the table on the bottom left of the HCAD page which has baths, fireplace etc
     building_data_table = soup.find('th', string='Building Data').parent.parent
