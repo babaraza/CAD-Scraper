@@ -106,7 +106,7 @@ def get_data(property_id):
     detail_cells = detail_row.find_all('td')
 
     # Manually adding Main Area (first floor) label and square footage
-    house_elements.append(['Main Area', detail_cells[-2].text.replace('.00', '').strip()])
+    house_elements.append(['Main Area', detail_cells[-1].text.replace('.00', '').strip()])
 
     # Getting the rest of the details from the first cell that contains baths etc
     detail_cells_divs = detail_cells[1].find_all('div')
