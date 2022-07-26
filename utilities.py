@@ -38,6 +38,31 @@ def format_result(house):
 
 STORY      : {house.stories}
 YEAR BUILT : {house.year_built}
+SQ FOOT    : {house.sqft}
+BATHROOMS  : {house.baths}
+FIREPLACE  : {house.fireplace}
+ROOF REPL  :
+EXTERIOR   : 
+GARAGE     : {house.garage}
+OPEN PORCH : {house.porch}
+PATIO      : {house.patio}
+WINDOW     : 
+PAY        : 
+BOUGHT     : {house.purchase_date}
+MARKET VAL : {house.value}
+ALARM      :  
+FLOOD QUOTE:
+
+Raw Data:
+Owner: {house.buyer}
+{raw_data}
+"""
+
+    old_template = f"""
+{house.address}
+
+STORY      : {house.stories}
+YEAR BUILT : {house.year_built}
 ROOF REPL  : 
 SQ FOOT    : {house.sqft}
 BATHROOMS  : {house.baths}

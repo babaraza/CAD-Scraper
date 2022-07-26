@@ -2,7 +2,9 @@ from utilities import House, format_result
 from bs4 import BeautifulSoup
 import pyperclip
 import requests
+import datetime
 import json
+import re
 
 
 def get_property_id(address):
@@ -77,15 +79,28 @@ def get_data(property_id):
     # The property page on FBCAD is made up of tables
     tables = soup.find_all('table')
 
-    house_appraisal_table = tables[1]
-    house_elements_table = tables[3]
-    house_deed_table = tables[-1]
+    house_appraisal = soup.find(text=re.compile("Property Roll Value History"))
+    house_appraisal_table = house_appraisal.findNext("table")
+
+    house_deed = soup.find(text=re.compile("Property Deed History"))
+    house_deed_table = house_deed.findNext("table")
+
+    house_elements = soup.find(text=re.compile(r"Property Improvement - Building"))
+    house_elements_table = house_elements.findNext("table")
 
     # The complete address for the house
     formatted_address = soup.find('th', text='Address:').next_element.next_element.text
 
     # The appraised value for the house
-    appraised_value = house_appraisal_table.find_all('tr')[-1].text.split(':')[1]
+    try:
+        house_appraisal_table_row = house_appraisal_table.find('td', text=datetime.datetime.now().year)
+        if house_appraisal_table_row:
+            appraised_value = house_appraisal_table_row.parent.findAll('td')[-1].text.strip()
+        else:
+            house_appraisal_table_row = house_appraisal_table.find('td', text=datetime.datetime.now().year - 1)
+            appraised_value = house_appraisal_table_row.parent.findAll('td')[-1].text.strip()
+    except IndexError:
+        appraised_value = "Not Found"
 
     # The square footage for the house
     sqft_raw = soup.find('div', class_="panel-table-info").find_all('span')[-1].text.split()[2]
@@ -118,7 +133,9 @@ def get_data(property_id):
         if data[0].lower() == "bedrooms":
             bedrooms = data[1]
         elif data[0].lower() == "bathrooms":
-            baths = data[1]
+            baths = float(data[1])
+        elif data[0].lower() == "half bathrooms":
+            baths += float(data[1])/2
         elif data[0].lower() == "fireplaces":
             fireplace = data[1]
 
