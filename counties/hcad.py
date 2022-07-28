@@ -229,6 +229,7 @@ def get_data(address):
                     buyer=buyer,
                     bedrooms='',
                     baths=baths,
+                    half_baths=None,
                     fireplace=fireplace,
                     stories=stories,
                     elements=building_area)

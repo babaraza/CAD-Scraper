@@ -1,7 +1,7 @@
 # Creating a House object to organize the results for easier access
 class House:
     def __init__(self, address, sqft, value, year_built, porch, patio, deck, garage, purchase_date, buyer, bedrooms,
-                 baths, fireplace, stories, elements):
+                 baths, half_baths, fireplace, stories, elements):
         self.address = address
         self.sqft = sqft
         self.value = value
@@ -14,6 +14,7 @@ class House:
         self.buyer = buyer
         self.bedrooms = bedrooms
         self.baths = baths
+        self.half_baths = half_baths
         self.fireplace = fireplace
         self.stories = stories
         self.elements = elements
@@ -33,13 +34,18 @@ def format_result(house):
     for k, v in house.elements:
         raw_data += f'{k}: {v}\n'
 
+    if not house.half_baths or house.half_baths == 0:
+        bathroom_template = house.baths
+    else:
+        bathroom_template = f'{house.baths} full {house.half_baths} half'
+
     template = f"""
 {house.address}
 
 STORY      : {house.stories}
 YEAR BUILT : {house.year_built}
 SQ FOOT    : {house.sqft}
-BATHROOMS  : {house.baths}
+BATHROOMS  : {bathroom_template}
 FIREPLACE  : {house.fireplace}
 ROOF REPL  :
 EXTERIOR   : 

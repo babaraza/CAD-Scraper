@@ -77,8 +77,6 @@ def get_data(property_id):
     soup = BeautifulSoup(s.text, 'lxml')
 
     # The property page on FBCAD is made up of tables
-    tables = soup.find_all('table')
-
     house_appraisal = soup.find(text=re.compile("Property Roll Value History"))
     house_appraisal_table = house_appraisal.findNext("table")
 
@@ -126,16 +124,16 @@ def get_data(property_id):
     # Getting the rest of the details from the first cell that contains baths etc
     detail_cells_divs = detail_cells[1].find_all('div')
 
-    bedrooms, baths, fireplace = [0] * 3
+    bedrooms, baths, half_baths, fireplace = [0] * 4
 
     for dcell in detail_cells_divs:
         data = dcell.text.split(":")
         if data[0].lower() == "bedrooms":
             bedrooms = data[1]
         elif data[0].lower() == "bathrooms":
-            baths = float(data[1])
+            baths = int(float(data[1]))
         elif data[0].lower() == "half bathrooms":
-            baths += float(data[1])/2
+            half_baths = int(float(data[1]))
         elif data[0].lower() == "fireplaces":
             fireplace = data[1]
 
@@ -199,6 +197,7 @@ def get_data(property_id):
                     buyer=buyer,
                     bedrooms=bedrooms,
                     baths=baths,
+                    half_baths=half_baths,
                     fireplace=fireplace,
                     stories=stories,
                     elements=house_elements)
