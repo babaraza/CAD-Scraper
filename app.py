@@ -22,6 +22,8 @@ def go_to(selection):
     Enables functionality to go back to start_program()
     """
 
+    result = None
+
     if selection == '1':
         # Ask the user for the address to search
         print('\nFort Bend County selected. Enter (x) to go back.\n')
@@ -34,16 +36,25 @@ def go_to(selection):
         else:
             # Running a search on the address
             print("\nSearching...")
-            result = fbcad.get_property_id(query.strip())
+            try:
+                result = fbcad.get_property_id(query.strip())
 
-            # Checking if the property was found
-            if result:
-                pyperclip.copy(format_result(result))
-
-            else:
-                print(f'\nNo Results for: {query.strip()}')
+            except Exception as e:
+                result = None
+                print(f'\nReceived error: \n\n{e}\n\n')
                 os.system('pause')
                 start_program()
+
+        # Checking if the property was found
+        if result:
+            pyperclip.copy(format_result(result))
+            print(format_result(result))
+            os.system('pause')
+
+        else:
+            print(f'\nNo Results for: {query.strip()}')
+            os.system('pause')
+            start_program()
 
     elif selection == '2':
         # Ask the user for the address to search
@@ -61,17 +72,22 @@ def go_to(selection):
             try:
                 result = hcad.get_data(query.strip())
 
-            except AttributeError:
+            except Exception as e:
                 result = None
-
-            # Checking if the property was found
-            if result:
-                pyperclip.copy(format_result(result))
-
-            else:
-                print(f'\nNo Results for: {query.strip()}')
+                print(f'\nReceived error: \n\n{e}\n\n')
                 os.system('pause')
                 start_program()
+
+        # Checking if the property was found
+        if result:
+            pyperclip.copy(format_result(result))
+            print(format_result(result))
+            os.system('pause')
+
+        else:
+            print(f'\nNo Results for: {query.strip()}')
+            os.system('pause')
+            start_program()
 
     else:
         start_program()

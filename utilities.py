@@ -56,7 +56,6 @@ WINDOW     :
 PAY        : 
 BOUGHT     : {house.purchase_date}
 MARKET VAL : {house.value}
-ALARM      :  
 FLOOD QUOTE:
 
 Raw Data:

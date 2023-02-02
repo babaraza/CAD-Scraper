@@ -90,10 +90,18 @@ def get_data(property_id):
     formatted_address = soup.find('th', text='Address:').next_element.next_element.text
 
     # The appraised value for the house
+    appraised_value = ""
+
     try:
         house_appraisal_table_row = house_appraisal_table.find('td', text=datetime.datetime.now().year)
         if house_appraisal_table_row:
-            appraised_value = house_appraisal_table_row.parent.findAll('td')[-1].text.strip()
+            appraised_value_raw = house_appraisal_table_row.parent.findAll('td')[-1].text.strip()
+            if appraised_value_raw != "N/A":
+                appraised_value = appraised_value_raw
+            else:
+                appraised_value = house_appraisal_table.find(
+                    'td', text=datetime.datetime.now().year - 1).parent.findAll(
+                    'td')[-1].text.strip()
         else:
             house_appraisal_table_row = house_appraisal_table.find('td', text=datetime.datetime.now().year - 1)
             appraised_value = house_appraisal_table_row.parent.findAll('td')[-1].text.strip()
