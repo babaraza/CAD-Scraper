@@ -41,10 +41,10 @@ def get_property_id(address):
         json_data = json.loads(s.text)
 
         # In the JSON results, Record Count shows 0 if property not found
-        if json_data['TotalResults'] != 0:
+        if json_data['resultsList'] != 0:
             # If property is found, retrieve the property IDs
             # and call get_data()
-            id_one = json_data['ResultsList'][0]['PropertyId']
+            id_one = json_data['resultsList'][0]['propertyId']
             return get_data(id_one)
         else:
             return None
@@ -87,7 +87,7 @@ def get_data(property_id):
     house_elements_table = house_elements.findNext("table")
 
     # The complete address for the house
-    formatted_address = soup.find('th', text='Address:').next_element.next_element.text
+    formatted_address = soup.find('th', text='Situs Address:').next_element.next_element.text
 
     # The appraised value for the house
     appraised_value = ""
@@ -109,7 +109,7 @@ def get_data(property_id):
         appraised_value = "Not Found"
 
     # The square footage for the house
-    sqft_raw = soup.find('div', class_="panel-table-info").find_all('span')[-1].text.split()[2]
+    sqft_raw = soup.find(text=re.compile("Living Area")).next_element
     square_foot = sqft_raw.replace('sqft', '')[:-3].replace(',', '')
 
     # Elements: Main Area, Attached Garage, Open Porch etc
@@ -179,6 +179,10 @@ def get_data(property_id):
     # Selecting the Deed History table to get last sale information
     # Getting the first row of data which includes deed date, seller, buyer etc
     house_deed_rows = house_deed_table.find_all('tr')[1:2]
+
+    purchase_date = ""
+    buyer = ""
+
     for row in house_deed_rows:
         cells = row.find_all('td')
         # Extracting the Purchase Date
